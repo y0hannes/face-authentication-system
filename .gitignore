@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+data/raw/
+models/face_model.pkl
+.env
