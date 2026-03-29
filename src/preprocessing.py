@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import os
-from config import IMAGE_SIZE
+from config import IMAGE_SIZE, HAAR_SCALE_FACTOR, HAAR_MIN_NEIGHBORS, HAAR_MIN_SIZE, HAAR_EYE_MIN_NEIGHBORS
 
 class HaarPreprocessor:
     def __init__(self):
@@ -29,8 +29,8 @@ class HaarPreprocessor:
 
         eyes = self.eye_cascade.detectMultiScale(
             roi_gray,
-            scaleFactor=1.1,
-            minNeighbors=10
+            scaleFactor=HAAR_SCALE_FACTOR,
+            minNeighbors=HAAR_EYE_MIN_NEIGHBORS
         )
 
         if len(eyes) >= 2:
@@ -87,9 +87,9 @@ class HaarPreprocessor:
         # 3. Detect faces
         faces = self.face_cascade.detectMultiScale(
             gray,
-            scaleFactor=1.1,
-            minNeighbors=6,
-            minSize=(100, 100)
+            scaleFactor=HAAR_SCALE_FACTOR,
+            minNeighbors=HAAR_MIN_NEIGHBORS,
+            minSize=HAAR_MIN_SIZE
         )
 
         if len(faces) == 0:
@@ -120,7 +120,7 @@ class HaarPreprocessor:
 _preprocessor = HaarPreprocessor()
 
 def preprocess_image(image):
-    """Interface for pipeline: returns (64,64) or None"""
+    """Interface for pipeline: returns processed image face or None"""
     return _preprocessor.process_image(image)
 
 
