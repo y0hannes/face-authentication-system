@@ -30,4 +30,6 @@ HAAR_MIN_SIZE        = (100, 100)
 HAAR_EYE_MIN_NEIGHBORS = 10
 
 # Prediction parameters
-THRESHOLD = 5000.0
+# With pixels normalized to [0, 1], maximum possible Euclidean distance is 64.
+# A threshold of 18.0 is a reasonable starting point for strict face matching.
+THRESHOLD = 18.0
