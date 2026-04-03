@@ -5,7 +5,6 @@ import threading
 import numpy as np
 from config import (
     DATA_PATH,
-    IMAGE_SIZE,
     CAPTURE_COUNT,
     CAPTURE_DELAY,
     BLUR_THRESHOLD,
@@ -73,9 +72,8 @@ def capture_images(
 
                     current_time = time.time()
                     if current_time - last_capture_time > CAPTURE_DELAY:
-                        resized_frame = cv2.resize(frame, IMAGE_SIZE)
                         img_path = os.path.join(save_path, f"{count}.jpg")
-                        cv2.imwrite(img_path, resized_frame)
+                        cv2.imwrite(img_path, frame)
                         count += 1
                         last_capture_time = current_time
 

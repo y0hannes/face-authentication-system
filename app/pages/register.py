@@ -4,6 +4,8 @@ import streamlit as st
 
 from config import CAPTURE_COUNT
 from src.data_collection import capture_images
+from src.train import train_and_save
+from src.predict import reload_model
 from app.utils import init_session_state, user_image_count
 
 
@@ -55,6 +57,41 @@ def show():
         if stop_btn and "stop_event" in st.session_state:
             st.session_state.stop_event.set()
             st.session_state.capture_running = False
+
+        st.divider()
+
+        # ── Train Model Section ────────────────────────────────────────────────
+        st.subheader("🧠 Train Model")
+        st.markdown(
+            "After capturing your images, click below to train the facial recognition "
+            "model. **You must train the model before the Login page will unlock.**"
+        )
+
+        train_btn = st.button("🚀 Train Model", width="stretch")
+        train_status = st.empty()
+        train_progress = st.empty()
+
+        if train_btn:
+            train_status.info("Starting training process...")
+
+            def _on_train_progress(current: int, total: int):
+                train_progress.text(f"Processing user {current} of {total}...")
+
+            with st.spinner("Extracting features and training the model..."):
+                train_result = train_and_save(progress_callback=_on_train_progress)
+
+            train_progress.empty()
+            
+            if train_result.get("success"):
+                reload_model()  # Crucial: wipe the old cached model from memory!
+                train_status.success(train_result["message"])
+                st.balloons()
+                
+                # Show the confusion matrix
+                if train_result.get("fig"):
+                    st.pyplot(train_result["fig"])
+            else:
+                train_status.error(train_result.get("message", "Training failed."))
 
     # ── CAPTURE UI (FOCUS MODE) ────────────────────────────────────────────
     # This block triggers when "Start Capture" is clicked.
