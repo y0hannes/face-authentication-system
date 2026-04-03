@@ -1,6 +1,7 @@
 import cv2
 import os
 import time
+import threading
 import numpy as np
 from config import (
     DATA_PATH,
@@ -8,89 +9,137 @@ from config import (
     CAPTURE_COUNT,
     CAPTURE_DELAY,
     BLUR_THRESHOLD,
-    BRIGHTNESS_THRESHOLD
+    BRIGHTNESS_THRESHOLD,
 )
 
-def capture_images(username):
+
+def capture_images(
+    username: str,
+    frame_callback=None,
+    stop_event: threading.Event = None,
+) -> dict:
+
     clean_username = username.strip().lower().replace(" ", "_")
     save_path = os.path.join(DATA_PATH, clean_username)
     os.makedirs(save_path, exist_ok=True)
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        print("Error: Could not access camera.")
-        return False
+        return {
+            "success": False,
+            "saved": 0,
+            "path": save_path,
+            "message": "Error: Could not access camera.",
+        }
 
-    cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+    cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
     face_cascade = cv2.CascadeClassifier(cascade_path)
 
     count = 0
     last_capture_time = 0
 
-    while count < CAPTURE_COUNT:
-        ret, frame = cap.read()
-        if not ret:
-            break
+    try:
+        while count < CAPTURE_COUNT:
+            # Respect external stop signal (e.g. Streamlit button press)
+            if stop_event is not None and stop_event.is_set():
+                break
 
-        frame = cv2.flip(frame, 1)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-        is_valid = len(faces) == 1
+            frame = cv2.flip(frame, 1)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
-        status_msg = "No Face Detected"
-        color = (0, 0, 255)
+            is_valid = len(faces) == 1
+            status_msg = "No Face Detected"
+            color = (0, 0, 255)
 
-        if is_valid:
-            (x, y, w, h) = faces[0]
-            face_roi = gray[y:y+h, x:x+w]
+            if is_valid:
+                (x, y, w, h) = faces[0]
+                face_roi = gray[y : y + h, x : x + w]
 
-            blur_value = cv2.Laplacian(face_roi, cv2.CV_64F).var()
-            avg_brightness = np.mean(face_roi)
+                blur_value = cv2.Laplacian(face_roi, cv2.CV_64F).var()
+                avg_brightness = np.mean(face_roi)
 
-            if blur_value < BLUR_THRESHOLD:
-                status_msg = "Too Blurry - Hold Still"
-            elif avg_brightness < BRIGHTNESS_THRESHOLD:
-                status_msg = "Too Dark - Increase Light"
-            else:
-                status_msg = "Quality OK - Capturing..."
-                color = (0, 255, 0)
+                if blur_value < BLUR_THRESHOLD:
+                    status_msg = "Too Blurry – Hold Still"
+                elif avg_brightness < BRIGHTNESS_THRESHOLD:
+                    status_msg = "Too Dark – Increase Light"
+                else:
+                    status_msg = f"Capturing… ({count + 1}/{CAPTURE_COUNT})"
+                    color = (0, 255, 0)
 
-                current_time = time.time()
-                if current_time - last_capture_time > CAPTURE_DELAY:
-                    # Resize image before saving
-                    resized_frame = cv2.resize(frame, IMAGE_SIZE)
+                    current_time = time.time()
+                    if current_time - last_capture_time > CAPTURE_DELAY:
+                        resized_frame = cv2.resize(frame, IMAGE_SIZE)
+                        img_path = os.path.join(save_path, f"{count}.jpg")
+                        cv2.imwrite(img_path, resized_frame)
+                        count += 1
+                        last_capture_time = current_time
 
-                    img_path = os.path.join(save_path, f"{count}.jpg")
-                    cv2.imwrite(img_path, resized_frame)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 
-                    count += 1
-                    last_capture_time = current_time
+            # Overlay progress text onto the frame for the callback preview
+            cv2.putText(
+                frame,
+                f"Progress: {count}/{CAPTURE_COUNT}",
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (255, 255, 255),
+                2,
+            )
+            cv2.putText(
+                frame,
+                status_msg,
+                (10, 65),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                color,
+                2,
+            )
 
-            cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+            # Hand the annotated frame to the UI layer
+            if frame_callback is not None:
+                frame_callback(frame, status_msg, count)
 
-        cv2.putText(frame, f"Progress: {count}/{CAPTURE_COUNT}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    finally:
+        cap.release()
 
-        cv2.putText(frame, status_msg, (10, 60),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+    success = count == CAPTURE_COUNT
+    return {
+        "success": success,
+        "saved": count,
+        "path": save_path,
+        "message": (
+            f"Capture complete. {count} images saved to '{save_path}'."
+            if success
+            else f"Capture incomplete. Only {count}/{CAPTURE_COUNT} images saved."
+        ),
+    }
 
-        cv2.imshow("High-Fidelity Data Collection", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-    return count == CAPTURE_COUNT
-
-
+#  Standalone CLI entrypoint
 if __name__ == "__main__":
-    username = input("Enter System Username: ")
-    success = capture_images(username)
+    import sys
 
-    if success:
-        print("Image capture completed successfully.")
-    else:
-        print("Image capture incomplete.")
+    username = input("Enter username: ").strip()
+    if not username:
+        print("Username cannot be empty.")
+        sys.exit(1)
+
+    def _preview(frame, status, count):
+        cv2.imshow("Data Collection", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            raise KeyboardInterrupt
+
+    try:
+        result = capture_images(username, frame_callback=_preview)
+    except KeyboardInterrupt:
+        result = {"success": False, "message": "Cancelled by user."}
+    finally:
+        cv2.destroyAllWindows()
+
+    print(result["message"])
