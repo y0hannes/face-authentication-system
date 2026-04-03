@@ -16,8 +16,12 @@ class HaarPreprocessor:
     def __init__(self):
         cascade_path = cv2.data.haarcascades
 
-        self.face_cascade = cv2.CascadeClassifier()
-        self.eye_cascade = cv2.CascadeClassifier()
+        self.face_cascade = cv2.CascadeClassifier(
+            os.path.join(cascade_path, "haarcascade_frontalface_default.xml")
+        )
+        self.eye_cascade = cv2.CascadeClassifier(
+            os.path.join(cascade_path, "haarcascade_eye.xml")
+        )
 
         if self.face_cascade.empty() or self.eye_cascade.empty():
             raise IOError("Could not load Haar Cascade XML files.")

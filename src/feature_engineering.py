@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 from sklearn.preprocessing import LabelEncoder
 
-from config import DATA_PATH, IMAGE_SIZE, MODEL_PATH
+from config import DATA_PATH, MODEL_PATH
 from src.preprocessing import preprocess_image
 
 

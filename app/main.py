@@ -1,17 +1,17 @@
-import sys
 import os
+import sys
 
-# Ensure project root is on sys.path regardless of where Streamlit is invoked
+# sys.path must be fixed BEFORE any local-package imports
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import streamlit as st
+import streamlit as st  # noqa: E402
+from app.pages import register, login  # noqa: E402
+from src.predict import is_model_ready  # noqa: E402
+from app.utils import list_registered_users  # noqa: E402
 
-from app.pages import register, login
-from src.predict import is_model_ready
-
-#  Page config
+# Page config
 st.set_page_config(
     page_title="Face Authentication System",
     page_icon="🔐",
@@ -19,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-#  Sidebar navigation 
+# Sidebar navigation
 st.sidebar.title("🔐 Face Auth")
 st.sidebar.markdown("---")
 
@@ -30,17 +30,24 @@ page = st.sidebar.radio(
          "Login to authenticate using your face.",
 )
 
-# Model readiness badge in sidebar
+# Model readiness badge
 if is_model_ready():
     st.sidebar.success("✅ Model is ready")
 else:
     st.sidebar.warning("⚠️ Model not trained yet")
 
+# Registered user count
+users = list_registered_users()
+st.sidebar.metric("Registered Users", len(users))
+
 st.sidebar.markdown("---")
 st.sidebar.caption("Face Authentication System — v1.0")
 
-#  Page routing
-if page == "Register":
-    register.show()
-elif page == "Login":
-    login.show()
+# Page routing
+try:
+    if page == "Register":
+        register.show()
+    elif page == "Login":
+        login.show()
+except Exception as e:
+    st.error(f"Page error: {e}")
