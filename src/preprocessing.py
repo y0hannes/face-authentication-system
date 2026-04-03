@@ -1,42 +1,49 @@
 import cv2
 import numpy as np
 import os
-from config import IMAGE_SIZE, HAAR_SCALE_FACTOR, HAAR_MIN_NEIGHBORS, HAAR_MIN_SIZE, HAAR_EYE_MIN_NEIGHBORS
+from config import (
+    IMAGE_SIZE,
+    HAAR_SCALE_FACTOR,
+    HAAR_MIN_NEIGHBORS,
+    HAAR_MIN_SIZE,
+    HAAR_EYE_MIN_NEIGHBORS,
+)
+
 
 class HaarPreprocessor:
+    """Full face preprocessing pipeline using Haar cascades."""
+
     def __init__(self):
         cascade_path = cv2.data.haarcascades
 
         self.face_cascade = cv2.CascadeClassifier(
-            os.path.join(cascade_path, 'haarcascade_frontalface_default.xml')
+            os.path.join(cascade_path, "haarcascade_frontalface_default.xml")
         )
         self.eye_cascade = cv2.CascadeClassifier(
-            os.path.join(cascade_path, 'haarcascade_eye.xml')
+            os.path.join(cascade_path, "haarcascade_eye.xml")
         )
 
         if self.face_cascade.empty() or self.eye_cascade.empty():
             raise IOError("Could not load Haar Cascade XML files.")
 
-    def normalize_lighting(self, gray_image):
-        """Improve lighting using CLAHE"""
+    def normalize_lighting(self, gray_image: np.ndarray) -> np.ndarray:
+        """Apply CLAHE to improve contrast under varying lighting conditions."""
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         return clahe.apply(gray_image)
 
-    def align_face(self, gray_image, face_rect):
-        """Align face using detected eyes"""
+    def align_face(self, gray_image: np.ndarray, face_rect: tuple) -> np.ndarray:
+        """Rotate image so the inter-eye axis is horizontal."""
         (x, y, w, h) = face_rect
-        roi_gray = gray_image[y:y+h, x:x+w]
+        roi_gray = gray_image[y : y + h, x : x + w]
 
         eyes = self.eye_cascade.detectMultiScale(
             roi_gray,
             scaleFactor=HAAR_SCALE_FACTOR,
-            minNeighbors=HAAR_EYE_MIN_NEIGHBORS
+            minNeighbors=HAAR_EYE_MIN_NEIGHBORS,
         )
 
         if len(eyes) >= 2:
-            # Take two eyes with smallest x (leftmost)
             eyes = sorted(eyes, key=lambda e: e[0])[:2]
-
             (ex1, ey1, ew1, eh1) = eyes[0]
             (ex2, ey2, ew2, eh2) = eyes[1]
 
@@ -46,64 +53,56 @@ class HaarPreprocessor:
             dY = eye2_center[1] - eye1_center[1]
             dX = eye2_center[0] - eye1_center[0]
 
-            # Avoid division by zero
             if dX == 0 and dY == 0:
                 return gray_image
 
             angle = np.degrees(np.arctan2(dY, dX))
-            midpoint = ((eye1_center[0] + eye2_center[0]) / 2,
-                        (eye1_center[1] + eye2_center[1]) / 2)
-
-            # Make sure midpoint is tuple of floats
-            if not (isinstance(midpoint, tuple) and len(midpoint) == 2):
-                return gray_image
+            midpoint = (
+                (eye1_center[0] + eye2_center[0]) / 2,
+                (eye1_center[1] + eye2_center[1]) / 2,
+            )
 
             M = cv2.getRotationMatrix2D(midpoint, angle, 1.0)
             aligned = cv2.warpAffine(
                 gray_image,
                 M,
                 (gray_image.shape[1], gray_image.shape[0]),
-                flags=cv2.INTER_CUBIC
+                flags=cv2.INTER_CUBIC,
             )
-
             return aligned
 
         return gray_image
 
-    def process_image(self, image):
-        """
-        Full pipeline:
-        Gray → Lighting → Detect → Align → Crop → Resize → Normalize
-        """
+    def process_image(self, image: np.ndarray):
         if image is None:
             return None
 
-        # 1. Convert to grayscale
+        # 1. Grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # 2. Normalize lighting
+        # 2. Lighting normalisation
         gray = self.normalize_lighting(gray)
 
-        # 3. Detect faces
+        # 3. Face detection
         faces = self.face_cascade.detectMultiScale(
             gray,
             scaleFactor=HAAR_SCALE_FACTOR,
             minNeighbors=HAAR_MIN_NEIGHBORS,
-            minSize=HAAR_MIN_SIZE
+            minSize=HAAR_MIN_SIZE,
         )
 
         if len(faces) == 0:
             return None
 
-        # 4. Take largest face
+        # 4. Largest face wins
         face_rect = max(faces, key=lambda f: f[2] * f[3])
         (x, y, w, h) = face_rect
 
-        # 5. Align face
+        # 5. Alignment
         aligned = self.align_face(gray, face_rect)
 
         # 6. Crop
-        crop = aligned[y:y+h, x:x+w]
+        crop = aligned[y : y + h, x : x + w]
 
         # 7. Resize
         try:
@@ -111,36 +110,40 @@ class HaarPreprocessor:
         except Exception:
             return None
 
-        # 8. Normalize pixels (0–1)
-        face_final = face_resized.astype("float32") / 255.0
-
-        return face_final
-
-# GLOBAL INSTANCE
-_preprocessor = HaarPreprocessor()
-
-def preprocess_image(image):
-    """Interface for pipeline: returns processed image face or None"""
-    return _preprocessor.process_image(image)
+        # 8. Pixel normalisation [0, 1]
+        return face_resized.astype("float32") / 255.0
 
 
-# --- OPTIONAL TEST ---
+_preprocessor: HaarPreprocessor = None
+
+
+def get_preprocessor() -> HaarPreprocessor:
+    """Return the shared HaarPreprocessor instance, creating it on first call."""
+    global _preprocessor
+    if _preprocessor is None:
+        _preprocessor = HaarPreprocessor()
+    return _preprocessor
+
+
+def preprocess_image(image: np.ndarray):
+
+    return get_preprocessor().process_image(image)
+
+
 if __name__ == "__main__":
+    import sys
+
     cap = cv2.VideoCapture(0)
-    print("Press 'q' to exit...")
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+        sys.exit(1)
 
-    while True:
+    print("Running headless test – reading 30 frames and counting detections…")
+    detected = 0
+    for _ in range(30):
         ret, frame = cap.read()
-        processed = preprocess_image(frame)
-
-        if processed is not None:
-            display = (processed * 255).astype(np.uint8)
-            cv2.imshow("Processed Face", display)
-
-        cv2.imshow("Live", frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        if ret and preprocess_image(frame) is not None:
+            detected += 1
 
     cap.release()
-    cv2.destroyAllWindows()
+    print(f"Faces detected in {detected}/30 frames.")
