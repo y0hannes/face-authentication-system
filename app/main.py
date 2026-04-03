@@ -40,6 +40,15 @@ else:
 users = list_registered_users()
 st.sidebar.metric("Registered Users", len(users))
 
+st.sidebar.markdown("### User Details")
+if users:
+    from app.utils import user_image_count
+    for u in users:
+        count = user_image_count(u)
+        st.sidebar.write(f"👤 **{u}** — {count} image(s)")
+else:
+    st.sidebar.caption("No users registered yet.")
+
 st.sidebar.markdown("---")
 st.sidebar.caption("Face Authentication System — v1.0")
 

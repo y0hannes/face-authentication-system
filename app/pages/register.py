@@ -4,7 +4,7 @@ import streamlit as st
 
 from config import CAPTURE_COUNT
 from src.data_collection import capture_images
-from app.utils import init_session_state, list_registered_users, user_image_count
+from app.utils import init_session_state, user_image_count
 
 
 def show():
@@ -25,7 +25,6 @@ def show():
             username = username.strip()
             if len(username) < 2:
                 st.error("Username must be at least 2 characters.")
-                _render_sidebar()
                 return
             if " " in username:
                 st.info("Spaces will be replaced with underscores.")
@@ -41,7 +40,6 @@ def show():
 
         if not username or len(username.strip()) < 2:
             st.info("Enter a valid username above to begin capturing.")
-            _render_sidebar()
             return
 
         st.subheader("📸 Face Capture")
@@ -128,16 +126,3 @@ def show():
             st.info("✅ Capture complete. You can now **Train the Model** (next step).")
         else:
             st.error(res["message"])
-
-    _render_sidebar()
-
-
-def _render_sidebar():
-    st.sidebar.markdown("### Registered Users")
-    users = list_registered_users()
-    if users:
-        for u in users:
-            count = user_image_count(u)
-            st.sidebar.write(f"👤 **{u}** — {count} image(s)")
-    else:
-        st.sidebar.caption("No users registered yet.")
