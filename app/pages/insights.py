@@ -21,7 +21,7 @@ from src.predict import is_model_ready
 _CSS = """
 <style>
 /* ── Page-level resets ── */
-[data-testid="stAppViewContainer"] { background: #f7f9fd; }
+[data-testid="stAppViewContainer"] { background: var(--bg-page); color: var(--txt-main); }
 [data-testid="block-container"]    { padding-top: 1rem !important; }
 
 /* ── Hero label ── */
@@ -30,13 +30,13 @@ _CSS = """
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #b81120;
+    color: var(--brand);
     margin-bottom: 4px;
 }
 .ins-title {
     font-size: 2.25rem;
     font-weight: 900;
-    color: #191c1f;
+    color: var(--txt-main);
     letter-spacing: -0.03em;
     margin: 0;
     line-height: 1.1;
@@ -44,18 +44,18 @@ _CSS = """
 .ins-title-bar {
     height: 4px;
     width: 80px;
-    background: linear-gradient(to right, #b81120, #dc3135);
+    background: linear-gradient(to right, var(--brand), #dc3135);
     border-radius: 9999px;
     margin-top: 12px;
 }
 
 /* ── KPI metric cards ── */
 .kpi-card {
-    background: #ffffff;
+    background: var(--bg-card);
     border-radius: 8px;
     padding: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    border-left: 3px solid #b81120;
+    box-shadow: var(--shadow);
+    border-left: 3px solid var(--brand);
     height: 140px;
     display: flex;
     flex-direction: column;
@@ -66,13 +66,13 @@ _CSS = """
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #64748b;
+    color: var(--txt-sub);
     margin-bottom: 4px;
 }
 .kpi-value {
     font-size: 2rem;
     font-weight: 800;
-    color: #191c1f;
+    color: var(--txt-main);
     letter-spacing: -0.04em;
     line-height: 1;
     margin: 0;
@@ -104,24 +104,24 @@ _CSS = """
 .kpi-sub {
     margin-top: 12px;
     font-size: 10px;
-    color: #94a3b8;
+    color: var(--txt-sub);
     font-style: italic;
     font-weight: 500;
 }
 
 /* ── Chart card ── */
 .chart-card {
-    background: #ffffff;
+    background: var(--bg-card);
     border-radius: 12px;
     padding: 28px 28px 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    border: 1px solid rgba(228,189,186,0.1);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
     overflow: hidden;
 }
 .chart-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #191c1f;
+    color: var(--txt-main);
     margin: 0 0 16px;
 }
 
@@ -139,13 +139,13 @@ _CSS = """
     position: absolute;
     inset: 0;
     background:
-        linear-gradient(rgba(203,213,225,0.25) 1px, transparent 1px);
+        linear-gradient(var(--border) 1px, transparent 1px);
     background-size: 100% 25%;
     pointer-events: none;
 }
 .bar {
     flex: 1;
-    background: linear-gradient(to top, rgba(184,17,32,0.18), #b81120);
+    background: linear-gradient(to top, rgba(184,17,32,0.18), var(--brand));
     border-radius: 3px 3px 0 0;
     min-height: 4px;
     transition: opacity 0.2s;
@@ -157,7 +157,7 @@ _CSS = """
     margin-top: 8px;
     font-size: 9px;
     font-weight: 700;
-    color: #94a3b8;
+    color: var(--txt-sub);
     letter-spacing: 0.15em;
     text-transform: uppercase;
 }
@@ -218,10 +218,10 @@ _CSS = """
 
 /* ── Events table ── */
 .events-card {
-    background: #ffffff;
+    background: var(--bg-card);
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    border: 1px solid rgba(228,189,186,0.1);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
     overflow: hidden;
     margin-top: 28px;
 }
@@ -230,13 +230,13 @@ _CSS = """
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px;
-    border-bottom: 1px solid #eceef2;
-    background: rgba(242,244,248,0.3);
+    border-bottom: 1px solid var(--border);
+    background: rgba(242,244,248,0.05);
 }
 .events-header-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #191c1f;
+    color: var(--txt-main);
     margin: 0;
 }
 .realtime-badge {
@@ -255,7 +255,7 @@ _CSS = """
     font-size: 0.82rem;
 }
 .evt-table thead tr {
-    background: rgba(242,244,248,0.5);
+    background: rgba(242,244,248,0.08);
 }
 .evt-table thead th {
     padding: 12px 20px;
@@ -263,15 +263,15 @@ _CSS = """
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #64748b;
+    color: var(--txt-sub);
     text-align: left;
 }
 .evt-table tbody tr {
-    border-top: 1px solid #eceef2;
+    border-top: 1px solid var(--border);
     transition: background 0.15s;
 }
-.evt-table tbody tr:hover { background: rgba(242,244,248,0.4); }
-.evt-table td { padding: 14px 20px; color: #191c1f; }
+.evt-table tbody tr:hover { background: rgba(242,244,248,0.05); }
+.evt-table td { padding: 14px 20px; color: var(--txt-main); }
 .status-dot {
     display: inline-flex;
     align-items: center;
@@ -287,7 +287,7 @@ _CSS = """
 .conf-bar-wrap {
     width: 96px;
     height: 5px;
-    background: #eceef2;
+    background: var(--bg-page);
     border-radius: 9999px;
     overflow: hidden;
     margin-bottom: 4px;
@@ -299,23 +299,23 @@ _CSS = """
 .conf-value {
     font-size: 10px;
     font-weight: 700;
-    color: #94a3b8;
+    color: var(--txt-sub);
 }
 .ts-cell {
     font-size: 11px;
     font-weight: 500;
-    color: #94a3b8;
+    color: var(--txt-sub);
 }
 .tbl-footer {
     padding: 14px 24px;
     text-align: center;
-    border-top: 1px solid #eceef2;
-    background: rgba(242,244,248,0.3);
+    border-top: 1px solid var(--border);
+    background: rgba(242,244,248,0.05);
 }
 .tbl-footer-btn {
     font-size: 10px;
     font-weight: 900;
-    color: #b81120;
+    color: var(--brand);
     text-transform: uppercase;
     letter-spacing: 0.15em;
     background: none;
@@ -325,7 +325,7 @@ _CSS = """
 .no-events-msg {
     padding: 40px 24px;
     text-align: center;
-    color: #94a3b8;
+    color: var(--txt-sub);
     font-size: 0.85rem;
     font-style: italic;
 }
@@ -606,18 +606,18 @@ def show():
         <div class="events-card">
           <div class="events-header">
             <span class="events-header-title">Login Count per Identity</span>
-            <span style="font-size:10px;font-weight:700;color:#64748b;font-family:Inter,sans-serif;
+            <span style="font-size:10px;font-weight:700;color:var(--txt-sub);font-family:Inter,sans-serif;
                          text-transform:uppercase;letter-spacing:0.05em;">{len(per_user)} identities</span>
           </div>
           <table class="evt-table" style="width:100%;">
             <thead>
               <tr>
                 <th style="padding:10px 20px;font-size:10px;font-weight:700;text-transform:uppercase;
-                           letter-spacing:0.12em;color:#64748b;width:48px;">#</th>
+                           letter-spacing:0.12em;color:var(--txt-sub);width:48px;">#</th>
                 <th style="padding:10px 8px;font-size:10px;font-weight:700;text-transform:uppercase;
-                           letter-spacing:0.12em;color:#64748b;">User</th>
+                           letter-spacing:0.12em;color:var(--txt-sub);">User</th>
                 <th style="padding:10px 20px;font-size:10px;font-weight:700;text-transform:uppercase;
-                           letter-spacing:0.12em;color:#64748b;">Successful Logins</th>
+                           letter-spacing:0.12em;color:var(--txt-sub);">Successful Logins</th>
               </tr>
             </thead>
             <tbody>{rows}</tbody>

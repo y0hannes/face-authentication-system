@@ -33,7 +33,7 @@ def _read_preview_frame():
 _CSS = """
 <style>
 /* Page background */
-[data-testid="stAppViewContainer"] { background: #f7f9fd; }
+[data-testid="stAppViewContainer"] { background: var(--bg-page); color: var(--txt-main); }
 [data-testid="block-container"]    { padding-top: 1.5rem !important; }
 
 /* Hero title */
@@ -41,7 +41,7 @@ _CSS = """
     font-size: 2.5rem;
     font-weight: 800;
     letter-spacing: -0.04em;
-    color: #191c1f;
+    color: var(--txt-main);
     margin: 0 0 12px;
     line-height: 1.1;
     font-family: Inter, sans-serif;
@@ -49,7 +49,7 @@ _CSS = """
 .login-title-bar {
     height: 4px;
     width: 80px;
-    background: linear-gradient(to right, #b81120, #dc3135);
+    background: linear-gradient(to right, var(--brand), #dc3135);
     border-radius: 9999px;
     margin-bottom: 28px;
 }
@@ -62,7 +62,7 @@ _CSS = """
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 20px 48px rgba(0,0,0,0.3);
-    border: 2px solid #e0e2e6;
+    border: 2px solid var(--border);
     aspect-ratio: 16/9;
     display: flex;
     align-items: center;
@@ -105,7 +105,7 @@ _CSS = """
 }
 .scan-zone-label {
     margin-top: -13px;
-    background: #b81120;
+    background: var(--brand);
     color: #fff;
     font-size: 9px;
     font-weight: 700;
@@ -201,10 +201,10 @@ _CSS = """
     margin-top: 14px;
 }
 .stat-card {
-    background: #ffffff;
+    background: var(--bg-card);
     border-radius: 10px;
     padding: 16px 18px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow);
 }
 .stat-card-label {
     font-size: 9px;
@@ -218,29 +218,29 @@ _CSS = """
     font-size: 1.4rem;
     font-weight: 900;
     letter-spacing: -0.04em;
-    color: #191c1f;
+    color: var(--txt-main);
     font-family: Inter, sans-serif;
     line-height: 1;
 }
 .stat-card-unit {
     font-size: 11px;
-    color: #94a3b8;
+    color: var(--txt-sub);
     font-weight: 500;
     margin-left: 2px;
 }
 
 /* Auth panel */
 .auth-panel {
-    background: #ffffff;
+    background: var(--bg-card);
     border-radius: 12px;
     padding: 28px;
-    box-shadow: 0 8px 24px rgba(25,28,31,0.04);
-    border: 1px solid rgba(228,189,186,0.2);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
 }
 .auth-panel-title {
     font-size: 1.2rem;
     font-weight: 700;
-    color: #191c1f;
+    color: var(--txt-main);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -248,7 +248,7 @@ _CSS = """
     font-family: Inter, sans-serif;
 }
 .auth-panel-title-icon {
-    color: #b81120;
+    color: var(--brand);
     font-size: 22px;
 }
 .auth-field-label {
@@ -256,24 +256,24 @@ _CSS = """
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #64748b;
+    color: var(--txt-sub);
     margin-bottom: 6px;
     display: block;
 }
 .auth-field-value {
     width: 100%;
-    background: #f2f4f8;
+    background: var(--bg-input);
     border-radius: 8px;
     padding: 10px 14px;
     font-size: 13px;
-    color: #64748b;
+    color: var(--txt-sub);
     font-family: monospace;
-    border: 1px solid rgba(228,189,186,0.1);
+    border: 1px solid var(--border);
     margin-bottom: 18px;
 }
 .auth-hint {
     font-size: 13px;
-    color: #64748b;
+    color: var(--txt-sub);
     line-height: 1.6;
     margin-bottom: 14px;
     font-family: Inter, sans-serif;
@@ -294,7 +294,7 @@ _CSS = """
 .verify-btn-style {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, #b81120, #dc3135);
+    background: linear-gradient(135deg, var(--brand), #dc3135);
     color: #fff;
     font-weight: 700;
     font-size: 14px;
@@ -312,7 +312,7 @@ _CSS = """
 
 /* Style the Streamlit buttons to match the design */
 [data-testid="block-container"] div.stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #b81120, #dc3135) !important;
+    background: linear-gradient(135deg, var(--brand), #dc3135) !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 8px !important;
@@ -328,8 +328,8 @@ _CSS = """
     opacity: 0.9 !important;
 }
 [data-testid="block-container"] div.stButton > button[kind="secondary"] {
-    background: #eceef2 !important;
-    color: #003461 !important;
+    background: var(--bg-input) !important;
+    color: var(--txt-main) !important;
     border: none !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
@@ -339,7 +339,7 @@ _CSS = """
 
 /* Recent sessions card */
 .sessions-card {
-    background: #f2f4f8;
+    background: var(--bg-input);
     border-radius: 12px;
     padding: 20px;
     margin-top: 14px;
@@ -349,7 +349,7 @@ _CSS = """
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: #64748b;
+    color: var(--txt-sub);
     margin-bottom: 12px;
     display: block;
     font-family: Inter, sans-serif;
@@ -359,7 +359,7 @@ _CSS = """
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
-    background: #ffffff;
+    background: var(--bg-card);
     border-radius: 8px;
     margin-bottom: 8px;
 }
@@ -367,11 +367,11 @@ _CSS = """
 .session-left { display: flex; align-items: center; gap: 10px; }
 .session-dot-green { width: 8px; height: 8px; border-radius: 50%; background: #008472; flex-shrink: 0; }
 .session-dot-red   { width: 8px; height: 8px; border-radius: 50%; background: #ba1a1a; flex-shrink: 0; }
-.session-name { font-size: 12px; font-weight: 600; color: #191c1f; font-family: Inter, sans-serif; }
-.session-time { font-size: 10px; color: #94a3b8; font-family: Inter, sans-serif; }
+.session-name { font-size: 12px; font-weight: 600; color: var(--txt-main); font-family: Inter, sans-serif; }
+.session-time { font-size: 10px; color: var(--txt-sub); font-family: Inter, sans-serif; }
 .sessions-empty {
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--txt-sub);
     text-align: center;
     font-style: italic;
     padding: 8px 0;

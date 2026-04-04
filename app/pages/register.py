@@ -42,24 +42,24 @@ def show():
         <style>
         .camera-label {
             font-size: 10px; font-weight: bold; letter-spacing: 0.12em;
-            color: #64748b; text-transform: uppercase; margin-bottom: 8px;
+            color: var(--txt-sub); text-transform: uppercase; margin-bottom: 8px;
         }
         .metric-box {
-            background: #ffffff; padding: 1.25rem 1rem; border-radius: 8px;
-            border-left: 4px solid #b81120;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+            background: var(--bg-card); padding: 1.25rem 1rem; border-radius: 8px;
+            border-left: 4px solid var(--brand);
+            box-shadow: var(--shadow);
         }
         .live-badge {
             display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+            background: var(--bg-card); backdrop-filter: blur(8px);
             padding: 6px 14px; border-radius: 999px;
             font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
-            text-transform: uppercase; color: #191c1f;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            text-transform: uppercase; color: var(--txt-main);
+            box-shadow: var(--shadow);
         }
         .ping-dot {
             width: 8px; height: 8px; border-radius: 50%;
-            background: #b81120; animation: ping 1s cubic-bezier(0,0,0.2,1) infinite;
+            background: var(--brand); animation: ping 1s cubic-bezier(0,0,0.2,1) infinite;
             flex-shrink: 0;
         }
         @keyframes ping {
@@ -69,7 +69,7 @@ def show():
         </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h1 style='font-weight:900;letter-spacing:-0.05em;color:#191c1f;font-size:2.25rem;margin-bottom:0'>Create Your Secure Profile</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='font-weight:900;letter-spacing:-0.05em;color:var(--txt-main);font-size:2.25rem;margin-bottom:0'>Create Your Secure Profile</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color:#0060ab;font-weight:500;font-size:1.125rem;margin-bottom:1.5rem;margin-top:4px'>Step into the future of institutional security with biometric enrollment.</p>", unsafe_allow_html=True)
 
     col_left, col_right = st.columns([7, 5], gap="large")
@@ -134,11 +134,11 @@ def show():
         st.write("")
         m1, m2, m3 = st.columns(3)
         with m1:
-            st.markdown("<div class='metric-box'><div style='font-size:10px;font-weight:700;text-transform:uppercase;color:#b81120'>Light Level</div><div style='font-size:1.4rem;font-weight:800'>Optimal</div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='metric-box'><div style='font-size:10px;font-weight:700;text-transform:uppercase;color:var(--brand)'>Light Level</div><div style='font-size:1.4rem;font-weight:800;color:var(--txt-main)'>Optimal</div></div>", unsafe_allow_html=True)
         with m2:
-            st.markdown("<div class='metric-box' style='border-left-color:#00685a'><div style='font-size:10px;font-weight:700;text-transform:uppercase;color:#00685a'>Detection</div><div style='font-size:1.4rem;font-weight:800'>Face Found</div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='metric-box' style='border-left-color:#00685a'><div style='font-size:10px;font-weight:700;text-transform:uppercase;color:#00685a'>Detection</div><div style='font-size:1.4rem;font-weight:800;color:var(--txt-main)'>Face Found</div></div>", unsafe_allow_html=True)
         with m3:
-            st.markdown("<div class='metric-box' style='border-left-color:#0060ab'><div style='font-size:10px;font-weight:700;text-transform:uppercase;color:#0060ab'>Quality</div><div style='font-size:1.4rem;font-weight:800'>98.4%</div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='metric-box' style='border-left-color:#0060ab'><div style='font-size:10px;font-weight:700;text-transform:uppercase;color:#0060ab'>Quality</div><div style='font-size:1.4rem;font-weight:800;color:var(--txt-main)'>98.4%</div></div>", unsafe_allow_html=True)
 
     with col_right:
         username = st.text_input("FULL NAME", placeholder="e.g. Dr. Julian Thorne")
@@ -177,7 +177,7 @@ def show():
             else:
                 st.error(res.get("message", "Capture failed."))
 
-        st.markdown("<p style='text-align:center;font-size:12px;color:#888;margin-top:16px'>By enrolling, you agree to the Precision Scholar Biometric Policy.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center;font-size:12px;color:var(--txt-sub);margin-top:16px'>By enrolling, you agree to the Precision Scholar Biometric Policy.</p>", unsafe_allow_html=True)
         st.warning("💡 **Pro Tip:** Ensure you are in a well-lit area and remove glasses for the initial scan.")
 
     # ── BLOCKING CAPTURE ENGINE (runs after Enroll Face click) ────────────
