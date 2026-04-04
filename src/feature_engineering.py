@@ -1,27 +1,28 @@
-# src/feature_engineering.py
+"""
+TEMPORARY MODULE
+
+This file uses simulated data for testing the ML pipeline.
+It will be replaced by the actual feature extraction pipeline.
+"""
+
 import numpy as np
 from config import IMAGE_SIZE
 
 def load_features():
-    """
-    Dummy data for testing ML pipeline.
-    Returns:
-        X -> features (flattened)
-        y -> labels (user IDs)
-    """
-    print("No images found, using dummy data for testing...")
+    print("Using realistic simulated data for testing...")
 
-    # 3 users, 3 images each, flattened 64x64
-    X = np.array([
-        [1]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-        [1]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-        [1]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-        [2]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-        [2]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-        [2]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-        [3]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-        [3]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-        [3]*IMAGE_SIZE[0]*IMAGE_SIZE[1],
-    ])
-    y = np.array([0,0,0,1,1,1,2,2,2])
-    return X, y
+    num_users = 3
+    samples_per_user = 10
+    feature_size = IMAGE_SIZE[0] * IMAGE_SIZE[1]
+
+    X = []
+    y = []
+
+    for user in range(num_users):
+        for _ in range(samples_per_user):
+            # Fully random features per sample (no identical base)
+            sample = np.random.rand(feature_size)
+            X.append(sample)
+            y.append(user)
+
+    return np.array(X), np.array(y)

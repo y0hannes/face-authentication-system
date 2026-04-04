@@ -21,6 +21,6 @@ MODEL_PATH = "models/face_model.pkl"
 IMAGE_SIZE = (64, 64)
 
 
-TEST_SIZE = 0.2          
+TEST_SIZE = 0.3          
 RANDOM_STATE = 42        
 KNN_NEIGHBORS = 3        
