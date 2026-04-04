@@ -1,5 +1,8 @@
 __pycache__/
 *.pyc
 data/raw/
-models/face_model.pkl
+models/*.pkl
 .envvenv/
+stitch/
+project_review.md
+specification.txt

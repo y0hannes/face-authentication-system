@@ -3,7 +3,8 @@ import cv2
 import streamlit as st
 
 from src.predict import is_model_ready, predict_face
-from app.utils import init_session_state
+from app.utils import init_session_state, log_auth_event
+from config import THRESHOLD
 
 
 def show():
@@ -25,15 +26,13 @@ def show():
         )
         st.divider()
 
-        col1, col2 = st.columns([1, 1])
-        start_btn = col1.button("▶ Start Authentication", width="stretch", type="primary")
-        stop_btn  = col2.button("⏹ Stop Camera",          width="stretch")
-
-        if stop_btn:
-            st.session_state.auth_running = False
+        start_btn = st.button("▶ Start Authentication", use_container_width=True, type="primary")
 
     # ── AUTHENTICATION UI (FOCUS MODE) ─────────────────────────────────────
     if start_btn:
+        from app.utils import increment_login_attempts
+        increment_login_attempts()
+        
         main_ui.empty()
         st.session_state.auth_running = True
         
@@ -41,9 +40,12 @@ def show():
         
         with camera_ui.container():
             st.header("Scanning Face...")
-            st.button("⏹ Cancel", key="cancel_auth_btn_temp")
             
-            col_left, col_cam, col_right = st.columns([1, 4, 1])
+            if st.button("⏹ Stop Camera", key="stop_auth", use_container_width=True):
+                st.session_state.auth_running = False
+            
+            # Center the camera tightly
+            col_left, col_cam, col_right = st.columns([1, 3, 1])
             with col_cam:
                 status_placeholder = st.empty()
                 frame_placeholder  = st.empty()
@@ -79,6 +81,10 @@ def show():
                     success = True
                     message = result["message"]
                     user_identified = result["username"]
+                    # Confidence: convert distance to a 0-100% score
+                    dist = result.get("distance") or 0.0
+                    confidence_pct = max(0.0, (1 - dist / THRESHOLD) * 100)
+                    log_auth_event("authenticated", user_identified, confidence_pct)
                     break  # Exit loop immediately on successful auth
                 elif result["status"] == "unknown":
                     status_placeholder.warning(f"🤷 {status_text}")
@@ -106,6 +112,10 @@ def show():
         
         # Force the session state to False so we don't keep looping
         st.session_state.auth_running = False
+        
+        # Log failed / cancelled attempts that didn't produce a successful auth
+        if not success:
+            log_auth_event("unknown", None, None)
         
         # Save results to session state
         st.session_state.auth_result = {
