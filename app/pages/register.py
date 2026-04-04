@@ -1,10 +1,8 @@
 import time
-import threading
 import cv2
 import streamlit as st
 
 from config import CAPTURE_COUNT
-from src.data_collection import capture_images
 from src.train import train_and_save
 from src.predict import reload_model
 from app.utils import init_session_state
@@ -171,7 +169,6 @@ def show():
                             train_res["fig"].savefig("models/cm_latest.png")
                         reload_model()
                         st.success(train_res["message"])
-                        st.balloons()
                     else:
                         st.error(train_res.get("message", "Training failed."))
             else:
@@ -180,35 +177,67 @@ def show():
         st.markdown("<p style='text-align:center;font-size:12px;color:var(--txt-sub);margin-top:16px'>By enrolling, you agree to the Precision Scholar Biometric Policy.</p>", unsafe_allow_html=True)
         st.warning("💡 **Pro Tip:** Ensure you are in a well-lit area and remove glasses for the initial scan.")
 
-    # ── BLOCKING CAPTURE ENGINE (runs after Enroll Face click) ────────────
+        if st.session_state.get("capture_running"):
+            if st.button("⏹ Stop Enrollment", key="stop_enroll", use_container_width=True):
+                st.session_state.capture_running = False
+                st.rerun()
+
+    # ── CAPTURE ENGINE ──────────────────────────────────────────────────
     if st.session_state.get("capture_running"):
-        stop_event = threading.Event()
-        _frame_counter = [0]
+        import os
+        from src.preprocessing import preprocess_image
+        from config import DATA_PATH, CAPTURE_DELAY
 
-        def on_frame(frame, status, count):
-            _frame_counter[0] += 1
-            if _frame_counter[0] % 2 == 0:
-                target_w = 480
-                h, w = frame.shape[:2]
-                target_h = int(h * target_w / w)
-                display = cv2.resize(frame, (target_w, target_h))
-                display_rgb = cv2.cvtColor(display, cv2.COLOR_BGR2RGB)
-                frame_placeholder.image(
-                    display_rgb, channels="RGB", output_format="JPEG", width="stretch"
-                )
-            progress_bar.progress(
-                min(count / CAPTURE_COUNT, 1.0),
-                text=f"Capturing biometric data… {count} / {CAPTURE_COUNT}"
-            )
-            status_placeholder.info(status)
+        username = st.session_state.reg_username
+        clean_username = username.strip().lower().replace(" ", "_")
+        save_path = os.path.join(DATA_PATH, clean_username)
+        os.makedirs(save_path, exist_ok=True)
 
-        result = capture_images(
-            st.session_state.reg_username,
-            frame_callback=on_frame,
-            stop_event=stop_event,
-        )
+        cap = cv2.VideoCapture(0)
+        time.sleep(0.5)
 
-        st.session_state.capture_result = result
+        count = 0
+        last_capture_time = 0
+
+        while count < CAPTURE_COUNT and st.session_state.get("capture_running"):
+            ret, frame = cap.read()
+            if not ret:
+                status_placeholder.error("Could not read from camera.")
+                break
+
+            frame = cv2.flip(frame, 1)
+            # Use the preprocessor for quality check
+            processed = preprocess_image(frame)
+            
+            is_valid = processed is not None
+            status_msg = "No Face Detected"
+            color = "#ba1a1a"
+
+            if is_valid:
+                status_msg = f"Capturing… ({count + 1}/{CAPTURE_COUNT})"
+                color = "#008472"
+                
+                current_time = time.time()
+                if current_time - last_capture_time > CAPTURE_DELAY:
+                    img_path = os.path.join(save_path, f"{count}.jpg")
+                    cv2.imwrite(img_path, frame)
+                    count += 1
+                    last_capture_time = current_time
+
+            # Update UI
+            display_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_placeholder.image(display_rgb, channels="RGB", output_format="JPEG", width="stretch")
+            progress_bar.progress(min(count / CAPTURE_COUNT, 1.0))
+            status_placeholder.markdown(f"<p style='color:{color};font-weight:600;margin:0;'>{status_msg}</p>", unsafe_allow_html=True)
+            
+            time.sleep(0.01)
+
+        cap.release()
+        st.session_state.capture_result = {
+            "success": count == CAPTURE_COUNT,
+            "saved": count,
+            "message": f"Captured {count} samples."
+        }
         st.session_state.capture_running = False
         st.rerun()
 

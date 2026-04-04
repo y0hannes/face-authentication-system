@@ -23,15 +23,19 @@ def get_model():
 
 
 def reload_model():
-    """Force a fresh reload of the model (call after re-training)."""
+    """Force a fresh reload of the model and label encoder (call after re-training)."""
     global _model, _label_encoder
     _model = None
     _label_encoder = None
-    return get_model()
+    # Pre-emptively load them to verify availability
+    get_model()
+    _get_label_encoder()
+    return _model
 
 
 def _get_label_encoder():
     global _label_encoder
+    # If the file exists but we haven't loaded it yet (or it was cleared)
     if _label_encoder is None:
         _label_encoder = get_label_encoder()
     return _label_encoder

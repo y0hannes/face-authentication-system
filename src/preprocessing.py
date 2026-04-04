@@ -14,7 +14,13 @@ class HaarPreprocessor:
     """Full face preprocessing pipeline using Haar cascades."""
 
     def __init__(self):
-        cascade_path = cv2.data.haarcascades
+        # Headless-safe cascade path detection
+        cascade_data = getattr(cv2, 'data', None)
+        if cascade_data and hasattr(cascade_data, 'haarcascades'):
+            cascade_path = cascade_data.haarcascades
+        else:
+            # Fallback for some headless distributions
+            cascade_path = os.path.join(os.path.dirname(cv2.__file__), 'data')
 
         self.face_cascade = cv2.CascadeClassifier(
             os.path.join(cascade_path, "haarcascade_frontalface_default.xml")
@@ -24,7 +30,16 @@ class HaarPreprocessor:
         )
 
         if self.face_cascade.empty() or self.eye_cascade.empty():
-            raise IOError("Could not load Haar Cascade XML files.")
+            # Final fallback: check common system paths
+            fallbacks = ["/usr/share/opencv4/haarcascades", "/usr/local/share/opencv4/haarcascades"]
+            for fb in fallbacks:
+                self.face_cascade = cv2.CascadeClassifier(os.path.join(fb, "haarcascade_frontalface_default.xml"))
+                self.eye_cascade = cv2.CascadeClassifier(os.path.join(fb, "haarcascade_eye.xml"))
+                if not self.face_cascade.empty() and not self.eye_cascade.empty():
+                    break
+            
+            if self.face_cascade.empty():
+                raise IOError(f"Could not load Haar Cascade XML files. Tried: {cascade_path}")
 
     def normalize_lighting(self, gray_image: np.ndarray) -> np.ndarray:
         """Apply CLAHE to improve contrast under varying lighting conditions."""

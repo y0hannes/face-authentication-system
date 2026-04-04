@@ -145,7 +145,7 @@ _CSS = """
 }
 .bar {
     flex: 1;
-    background: linear-gradient(to top, rgba(184,17,32,0.18), var(--brand));
+    background: linear-gradient(to top, rgba(0,132,114,0.18), #008472);
     border-radius: 3px 3px 0 0;
     min-height: 4px;
     transition: opacity 0.2s;
@@ -499,7 +499,7 @@ def show():
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
             <span class="chart-title">Login Frequency</span>
             <span style="font-size:10px;padding:4px 12px;border-radius:9999px;
-                         background:#b81120;color:#fff;font-weight:700;
+                         background:#008472;color:#fff;font-weight:700;
                          letter-spacing:0.05em;text-transform:uppercase;">
               30 Days
             </span>
@@ -594,10 +594,10 @@ def show():
               <td style="padding:12px 8px;font-weight:600;font-size:0.875rem;color:#191c1f;">{uname}</td>
               <td style="padding:12px 20px;">
                 <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="flex:1;height:6px;background:#eceef2;border-radius:9999px;overflow:hidden;">
-                    <div style="height:100%;width:{bar_w}%;background:linear-gradient(to right,#b81120,#dc3135);border-radius:9999px;"></div>
+                  <div style="flex:1;height:6px;background:var(--bg-input);border-radius:9999px;overflow:hidden;">
+                    <div style="height:100%;width:{bar_w}%;background:linear-gradient(to right,#008472,#10b981);border-radius:9999px;"></div>
                   </div>
-                  <span style="font-size:12px;font-weight:800;color:#191c1f;min-width:24px;text-align:right;">{cnt}</span>
+                  <span style="font-size:12px;font-weight:800;color:var(--txt-main);min-width:24px;text-align:right;">{cnt}</span>
                 </div>
               </td>
             </tr>"""
@@ -638,5 +638,5 @@ def show():
         """, unsafe_allow_html=True)
         data = {"User": list(users), "Images": [user_image_count(u) for u in users]}
         df = pd.DataFrame(data)
-        st.bar_chart(df.set_index("User"), color="#b81120", use_container_width=True)
+        st.bar_chart(df.set_index("User"), color="#10b981", use_container_width=True)
         st.caption("Distribution of captured face samples per registered identity.")

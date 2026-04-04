@@ -161,3 +161,37 @@ def get_per_user_login_counts(data_path: str = None) -> dict:
             user = e.get("username", "Unknown")
             counts[user] = counts.get(user, 0) + 1
     return dict(sorted(counts.items(), key=lambda x: x[1], reverse=True))
+
+
+def clear_all_data():
+    """Nuclear reset: Delete all users, all models, and all logs."""
+    import shutil
+    from config import MODEL_PATH
+
+    # 1. Clear data/raw (except the folder itself)
+    if os.path.exists(DATA_PATH):
+        for item in os.listdir(DATA_PATH):
+            item_path = os.path.join(DATA_PATH, item)
+            try:
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                else:
+                    os.remove(item_path)
+            except Exception:
+                pass
+
+    # 2. Clear models/
+    model_dir = os.path.dirname(MODEL_PATH)
+    if os.path.exists(model_dir):
+        for item in os.listdir(model_dir):
+            if item.endswith(".pkl") or item.endswith(".png"):
+                try:
+                    os.remove(os.path.join(model_dir, item))
+                except Exception:
+                    pass
+    
+    # 3. Reset session state triggers
+    if "auth_result" in st.session_state:
+        del st.session_state["auth_result"]
+    if "capture_result" in st.session_state:
+        del st.session_state["capture_result"]
