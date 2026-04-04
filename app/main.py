@@ -21,18 +21,27 @@ from app.utils import (  # noqa: E402
 st.set_page_config(
     page_title="Face Authentication System",
     page_icon="🔐",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ── Global styles ─────────────────────────────────────────────────────────────
-st.markdown("""
+st.markdown(
+    """
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
             vertical-align: middle;
+        }
+
+        /* ── Wide Layout Optimization ── */
+        [data-testid="stAppViewBlockContainer"] {
+            max-width: 1440px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+            margin: 0 auto;
         }
 
         /* Hide Streamlit's default page nav */
@@ -95,24 +104,29 @@ st.markdown("""
             background: rgba(184,17,32,0.08);
         }
     </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ── Load live data ────────────────────────────────────────────────────────────
-users        = list_registered_users()
-total_users  = len(users)
-login_count  = get_login_attempts()
+users = list_registered_users()
+total_users = len(users)
+login_count = get_login_attempts()
 failed_count = get_failed_attempts()
-model_ok     = is_model_ready()
+model_ok = is_model_ready()
 
 # ── Sidebar: Brand header ─────────────────────────────────────────────────────
-st.sidebar.markdown("""
+st.sidebar.markdown(
+    """
     <div style="padding: 20px 4px 16px; border-bottom: 1px solid rgba(228,189,186,0.2); margin-bottom: 8px;">
         <h2 style="font-size: 1.125rem; font-weight: 900; color: #1e293b;
                    margin: 0; font-family: Inter, sans-serif;">Auth Hub</h2>
         <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em;
                   color: #b81120; font-weight: 700; margin: 3px 0 0;">Precision Security</p>
     </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ── Sidebar: Navigation ───────────────────────────────────────────────────────
 if "current_page" not in st.session_state:
@@ -126,7 +140,9 @@ selected = st.sidebar.radio(
     options=_pages,
     index=_pages.index(st.session_state.current_page),
     label_visibility="collapsed",
-    format_func=lambda p: f"{p}",   # plain text; icon injected via CSS ::before workaround below
+    format_func=lambda p: (
+        f"{p}"
+    ),  # plain text; icon injected via CSS ::before workaround below
 )
 
 if selected != st.session_state.current_page:
@@ -136,11 +152,12 @@ if selected != st.session_state.current_page:
 page = st.session_state.current_page
 
 # ── Sidebar: Live stats strip ─────────────────────────────────────────────────
-model_dot  = "#008472" if model_ok  else "#ba1a1a"
-model_txt  = "Model ready" if model_ok else "Not trained"
+model_dot = "#008472" if model_ok else "#ba1a1a"
+model_txt = "Model ready" if model_ok else "Not trained"
 failed_color = "#ba1a1a" if failed_count > 0 else "#008472"
 
-st.sidebar.markdown(f"""
+st.sidebar.markdown(
+    f"""
     <div style="margin: 16px 0; border-radius: 10px; background: #ffffff;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden;">
 
@@ -193,16 +210,21 @@ st.sidebar.markdown(f"""
       </div>
 
     </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ── Sidebar: User details (keep functional — with delete) ─────────────────────
-st.sidebar.markdown("""
+st.sidebar.markdown(
+    """
     <p style="font-size: 10px; font-weight: 700; text-transform: uppercase;
               letter-spacing: 0.15em; color: #94a3b8; margin: 4px 0 8px;
               font-family: Inter, sans-serif; padding: 0 2px;">
       Registered Users
     </p>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 if users:
     for u in users:
@@ -212,7 +234,7 @@ if users:
             f'<div style="font-size:0.8rem; padding: 5px 2px; font-family:Inter,sans-serif;">'
             f'<span style="font-weight:600; color:#1e293b;">{u}</span>'
             f'<span style="color:#94a3b8; font-size:11px;"> · {count} img</span>'
-            f'</div>',
+            f"</div>",
             unsafe_allow_html=True,
         )
         if col2.button("🗑️", key=f"del_{u}", help=f"Delete {u}"):
@@ -226,12 +248,15 @@ else:
     )
 
 # ── Sidebar: Footer ───────────────────────────────────────────────────────────
-st.sidebar.markdown("""
+st.sidebar.markdown(
+    """
     <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(228,189,186,0.2);">
       <p style="font-size: 10px; color: #cbd5e1; font-family: Inter, sans-serif;
                 text-align: center; margin: 0;">Face Auth System · v1.0</p>
     </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ── Page routing ──────────────────────────────────────────────────────────────
 try:

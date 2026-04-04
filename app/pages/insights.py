@@ -629,11 +629,14 @@ def show():
           <div class="no-events-msg">No successful logins recorded yet.</div>
         </div>""", unsafe_allow_html=True)
 
-    # ── Face Sample Distribution (below fold) ─────────────────────────────
+    # ── Face Sample Distribution ──────────────────────────────────────────
     if total_users > 0:
-        st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-        with st.expander("📊 Face Sample Distribution per User", expanded=False):
-            data = {"User": list(users), "Images": [user_image_count(u) for u in users]}
-            df = pd.DataFrame(data)
-            st.bar_chart(df.set_index("User"), color="#b81120")
-            st.caption("Distribution of captured face samples per registered identity.")
+        st.markdown("""
+            <div style="margin-bottom:8px; margin-top:32px;">
+              <p class="ins-label">Face Sample Distribution per User</p>
+            </div>
+        """, unsafe_allow_html=True)
+        data = {"User": list(users), "Images": [user_image_count(u) for u in users]}
+        df = pd.DataFrame(data)
+        st.bar_chart(df.set_index("User"), color="#b81120", use_container_width=True)
+        st.caption("Distribution of captured face samples per registered identity.")
