@@ -7,6 +7,8 @@
 
 **FaceAuth** is a high-performance, machine learning-driven authentication system that replaces traditional passwords with secure facial recognition. This project features a premium, Bento-grid inspired user interface, real-time biometric health monitoring, and a comprehensive administrative insights dashboard.
 
+[**🚀 View Live Demo**](https://userfacemanagementsystem-demo.streamlit.app/)
+
 ---
 
 ## 🌟 Key Features
