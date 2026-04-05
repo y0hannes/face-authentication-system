@@ -16,16 +16,43 @@ def get_preview_camera():
     return cap
 
 
-def _read_preview_frame():
+def _read_preview_frame(draw_overlay=True):
     """Grab one frame from the persistent preview camera. Returns RGB array or None."""
     cap = get_preview_camera()
     ret, frame = cap.read()
     if not ret:
         return None
+    
+    # Mirror effect for more natural feel
+    frame = cv2.flip(frame, 1)
+    
     target_w = 640
     h, w = frame.shape[:2]
     target_h = int(h * target_w / w)
     display = cv2.resize(frame, (target_w, target_h))
+    
+    if draw_overlay:
+        # Draw the Scan Zone (200x250) on the 640x480 frame
+        cx, cy = 320, 240
+        w_half, h_half = 100, 125
+        color = (114, 132, 0) # BGR (success-green)
+        # Draw a stylish cornered frame instead of a full rectangle for 'premium' look
+        thickness = 2
+        length = 30
+        pts = [
+            [(cx-w_half, cy-h_half+length), (cx-w_half, cy-h_half), (cx-w_half+length, cy-h_half)],
+            [(cx+w_half-length, cy-h_half), (cx+w_half, cy-h_half), (cx+w_half, cy-h_half+length)],
+            [(cx+w_half, cy+h_half-length), (cx+w_half, cy+h_half), (cx+w_half-length, cy+h_half)],
+            [(cx-w_half+length, cy+h_half), (cx-w_half, cy+h_half), (cx-w_half, cy+h_half-length)]
+        ]
+        import numpy as np
+        for pt in pts:
+            cv2.polylines(display, [np.array(pt)], False, color, thickness, cv2.LINE_AA)
+            
+        # Add 'SCAN ZONE' label
+        cv2.putText(display, "SCAN ZONE", (cx-w_half+10, cy-h_half-10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA)
+
     return cv2.cvtColor(display, cv2.COLOR_BGR2RGB)
 
 
@@ -377,7 +404,13 @@ _CSS = """
     padding: 8px 0;
     font-family: Inter, sans-serif;
 }
+/* Premium rounding for all streamlit images */
+[data-testid="stImage"] img {
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
 </style>
+
 """
 
 
@@ -464,16 +497,8 @@ def show():
         is_preview      = st.session_state.camera_preview and not is_auth_running
 
         if is_preview:
-            # Live preview — read one frame and rerun to simulate stream
-            frame_rgb = _read_preview_frame()
-            if frame_rgb is not None:
-                cam_placeholder.image(
-                    frame_rgb, channels="RGB", output_format="JPEG",
-                    use_container_width=True,
-                )
-            else:
-                cam_placeholder.warning("⚠️ Camera unavailable.")
-
+            # Placeholder for live feed (loop moved to end of script for non-blocking UI)
+            cam_placeholder.info("Initializing camera...")
         elif not is_auth_running:
             # Idle dark placeholder
             cam_placeholder.markdown("""
@@ -516,12 +541,12 @@ def show():
         if not is_auth_running:
             st.write("")
             if is_preview:
-                if st.button("⏹ Stop Preview", key="stop_preview", use_container_width=True):
+                if st.button("⏹ Stop Preview", key="stop_preview", width="stretch"):
                     st.session_state.camera_preview = False
                     get_preview_camera.clear()
                     st.rerun()
             else:
-                if st.button("🎥 Start Preview", key="start_preview", use_container_width=True):
+                if st.button("🎥 Start Preview", key="start_preview", width="stretch"):
                     st.session_state.camera_preview = True
                     st.rerun()
 
@@ -621,12 +646,12 @@ def show():
             verify_btn = st.button(
                 "🎥  Verify Identity",
                 key="start_auth",
-                use_container_width=True,
+                width="stretch",
                 type="primary",
             )
         else:
             verify_btn = False
-            if st.button("⏹  Stop Camera", key="stop_auth", use_container_width=True):
+            if st.button("⏹  Stop Camera", key="stop_auth", width="stretch"):
                 st.session_state.auth_running = False
 
         # Recent sessions
@@ -679,18 +704,39 @@ def show():
                     log_auth_event("authenticated", user_identified, conf_pct)
                     break
                 elif result["status"] == "unknown":
-                    status_text = "Face not recognised"
+                    status_text = "FACE NOT RECOGNIZED"
                 elif result["status"] == "no_face":
-                    status_text = "Searching for face..."
+                    status_text = "SEARCHING FACE..."
                 else:
                     status_text = result["message"]
 
             # ── Render live camera frame ───────────────────────────────
             if frame_counter % 2 == 0:
+                # Mirror and resize
+                frame = cv2.flip(frame, 1)
                 target_w = 640
                 h, w     = frame.shape[:2]
                 target_h = int(h * target_w / w)
                 display  = cv2.resize(frame, (target_w, target_h))
+                
+                # Draw Scan Zone on auth loop too
+                cx, cy = 320, 240
+                w_h, h_h = 100, 125
+                color = (114, 132, 0) # BGR (success-green)
+                thickness = 2
+                length = 30
+                import numpy as np
+                pts = [
+                    [(cx-w_h, cy-h_h+length), (cx-w_h, cy-h_h), (cx-w_h+length, cy-h_h)],
+                    [(cx+w_h-length, cy-h_h), (cx+w_h, cy-h_h), (cx+w_h, cy-h_h+length)],
+                    [(cx+w_h, cy+h_h-length), (cx+w_h, cy+h_h), (cx+w_h-length, cy+h_h)],
+                    [(cx-w_h+length, cy+h_h), (cx-w_h, cy+h_h), (cx-w_h, cy+h_h-length)]
+                ]
+                for pt in pts:
+                    cv2.polylines(display, [np.array(pt)], False, color, thickness, cv2.LINE_AA)
+                cv2.putText(display, "AUTHENTICATING", (cx-w_h+10, cy-h_h-10), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA)
+
                 display_rgb = cv2.cvtColor(display, cv2.COLOR_BGR2RGB)
 
                 # Live feed badge + status bar overlaid via caption trick
@@ -698,7 +744,7 @@ def show():
                     display_rgb,
                     channels="RGB",
                     output_format="JPEG",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
                 # Update stat micro-cards with live confidence
@@ -721,7 +767,7 @@ def show():
                       </div>
                       <div class="stat-card" style="border-left:3px solid #008472;">
                         <span class="stat-card-label" style="color:#008472;">Status</span>
-                        <span class="stat-card-value" style="font-size:0.9rem;color:#64748b;">{status_text[:14]}</span>
+                        <span class="stat-card-value" style="font-size:0.8rem;color:#64748b;">{status_text}</span>
                       </div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -741,7 +787,26 @@ def show():
         }
         st.rerun()
 
-    # ── Trigger rerun while preview is active to simulate streaming ────────
+    # ── LIVE UPDATE LOOPS (Moved to end for non-blocking UI) ──────────────
+    
+    # 1. Preview Loop
     if st.session_state.get("camera_preview") and not st.session_state.get("auth_running"):
-        time.sleep(0.04)  # ~25 fps
-        st.rerun()
+        while st.session_state.get("camera_preview") and not st.session_state.get("auth_running"):
+            frame_rgb = _read_preview_frame(draw_overlay=True)
+            if frame_rgb is not None:
+                cam_placeholder.image(
+                    frame_rgb, channels="RGB", output_format="JPEG",
+                    width="stretch",
+                )
+            else:
+                cam_placeholder.warning("⚠️ Camera unavailable.")
+                break
+            time.sleep(0.05)
+        
+        # If deactivated, refresh to show idle view
+        if not st.session_state.camera_preview:
+            st.rerun()
+
+    # 2. Trigger Rerun if needed (Fallback)
+    # # Removed st.rerun loop as preview is now handled by internal while loop
+

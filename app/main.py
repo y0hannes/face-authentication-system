@@ -275,7 +275,7 @@ else:
 # ── Sidebar: Data Management (Nuclear Option) ─────────────────────────────────
 st.sidebar.markdown('<div style="margin-top: 18px;"></div>', unsafe_allow_html=True)
 if st.sidebar.button("🗑️  Clear All System Data", key="nuclear_reset", 
-                       use_container_width=True, help="Nuclear reset: Delete users, models, and logs"):
+                       width="stretch", help="Nuclear reset: Delete users, models, and logs"):
     from app.utils import clear_all_data
     clear_all_data()
     st.rerun()

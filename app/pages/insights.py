@@ -638,5 +638,5 @@ def show():
         """, unsafe_allow_html=True)
         data = {"User": list(users), "Images": [user_image_count(u) for u in users]}
         df = pd.DataFrame(data)
-        st.bar_chart(df.set_index("User"), color="#10b981", use_container_width=True)
+        st.bar_chart(df.set_index("User"), color="#10b981", width="stretch")
         st.caption("Distribution of captured face samples per registered identity.")

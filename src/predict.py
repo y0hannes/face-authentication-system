@@ -82,7 +82,7 @@ def predict_face(image: np.ndarray) -> dict:
             "status": "unknown",
             "username": None,
             "distance": distance,
-            "message": f"Face not recognised (distance {distance:.1f} > threshold {THRESHOLD}).",
+            "message": "Face Not Recognized",
         }
 
     return {

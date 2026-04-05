@@ -12,20 +12,46 @@ from app.utils import init_session_state
 def get_preview_camera():
     """Keep a single camera instance open for the live preview across reruns."""
     cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        return None
     time.sleep(0.5)  # Warm-up
     return cap
 
 
-def _read_preview_frame():
+def _read_preview_frame(draw_overlay=True):
     """Grab one frame from the persistent camera. Returns RGB numpy array or None."""
     cap = get_preview_camera()
+    if cap is None:
+        return None
     ret, frame = cap.read()
     if not ret:
         return None
-    target_w = 480
+    # Mirror
+    frame = cv2.flip(frame, 1)
+    target_w = 640
     h, w = frame.shape[:2]
     target_h = int(h * target_w / w)
     display = cv2.resize(frame, (target_w, target_h))
+    
+    if draw_overlay:
+        # Draw Scan Zone (matching login page)
+        cx, cy = 320, 240
+        w_h, h_h = 100, 125
+        color = (114, 132, 0) # BGR (success-green)
+        thickness = 2
+        length = 30
+        import numpy as np
+        corners = [
+            [(cx-w_h, cy-h_h+length), (cx-w_h, cy-h_h), (cx-w_h+length, cy-h_h)],
+            [(cx+w_h-length, cy-h_h), (cx+w_h, cy-h_h), (cx+w_h, cy-h_h+length)],
+            [(cx+w_h, cy+h_h-length), (cx+w_h, cy+h_h), (cx+w_h-length, cy+h_h)],
+            [(cx-w_h+length, cy+h_h), (cx-w_h, cy+h_h), (cx-w_h, cy+h_h-length)]
+        ]
+        for corner in corners:
+            cv2.polylines(display, [np.array(corner)], False, color, thickness, cv2.LINE_AA)
+        cv2.putText(display, "SCAN ZONE", (cx-w_h+10, cy-h_h-10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA)
+                    
     return cv2.cvtColor(display, cv2.COLOR_BGR2RGB)
 
 
@@ -64,7 +90,13 @@ def show():
             0%, 100% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.4); opacity: 0.6; }
         }
+        /* Premium rounding for all streamlit images */
+        [data-testid="stImage"] img {
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
         </style>
+
     """, unsafe_allow_html=True)
 
     st.markdown("<h1 style='font-weight:900;letter-spacing:-0.05em;color:var(--txt-main);font-size:2.25rem;margin-bottom:0'>Create Your Secure Profile</h1>", unsafe_allow_html=True)
@@ -84,14 +116,8 @@ def show():
         is_preview = st.session_state.camera_preview and not is_capturing
 
         if is_preview:
-            # Show one live frame and schedule rerun to simulate stream
-            frame_rgb = _read_preview_frame()
-            if frame_rgb is not None:
-                frame_placeholder.image(
-                    frame_rgb, channels="RGB", output_format="JPEG", width="stretch"
-                )
-            else:
-                frame_placeholder.warning("⚠️ Camera unavailable.")
+            # Placeholder for live feed (loop moved to end of script for non-blocking UI)
+            frame_placeholder.info("Initializing camera...")
         elif not is_capturing:
             # Idle — show a dark placeholder with a start-preview prompt
             frame_placeholder.markdown("""
@@ -119,12 +145,12 @@ def show():
         st.write("")
         if not is_capturing:
             if is_preview:
-                if st.button("⏹ Stop Preview", use_container_width=True):
+                if st.button("⏹ Stop Preview", width="stretch"):
                     st.session_state.camera_preview = False
                     get_preview_camera.clear()  # Release camera resource
                     st.rerun()
             else:
-                if st.button("🎥 Start Preview", use_container_width=True):
+                if st.button("🎥 Start Preview", width="stretch"):
                     st.session_state.camera_preview = True
                     st.rerun()
 
@@ -143,7 +169,7 @@ def show():
 
         st.info("🔒 **Encryption Standard**\n\nYour biometric signature is hashed and encrypted using AES-256 before being stored in our isolated secure vault.")
 
-        if st.button("📸 Enroll Face", use_container_width=True):
+        if st.button("📸 Enroll Face", width="stretch"):
             if not username or len(username.strip()) < 2:
                 st.error("Full Name must be at least 2 characters.")
             else:
@@ -159,7 +185,7 @@ def show():
             res = st.session_state.capture_result
             if res.get("success"):
                 st.success("✅ Facial data securely captured!")
-                if st.button("🚀 Synchronize Neural Matrix", use_container_width=True):
+                if st.button("🚀 Synchronize Neural Matrix", width="stretch"):
                     with st.spinner("Extracting features and compiling matrix..."):
                         train_res = train_and_save()
                     if train_res.get("success"):
@@ -178,11 +204,30 @@ def show():
         st.warning("💡 **Pro Tip:** Ensure you are in a well-lit area and remove glasses for the initial scan.")
 
         if st.session_state.get("capture_running"):
-            if st.button("⏹ Stop Enrollment", key="stop_enroll", use_container_width=True):
+            if st.button("⏹ Stop Enrollment", key="stop_enroll", width="stretch"):
                 st.session_state.capture_running = False
                 st.rerun()
 
-    # ── CAPTURE ENGINE ──────────────────────────────────────────────────
+    # ── LIVE UPDATE LOOPS (Moved to end for non-blocking UI) ──────────────
+    
+    # 1. Preview Loop
+    if st.session_state.get("camera_preview") and not st.session_state.get("capture_running"):
+        while st.session_state.get("camera_preview") and not st.session_state.get("capture_running"):
+            frame_rgb = _read_preview_frame(draw_overlay=True)
+            if frame_rgb is not None:
+                frame_placeholder.image(
+                    frame_rgb, channels="RGB", output_format="JPEG", width="stretch"
+                )
+            else:
+                frame_placeholder.warning("⚠️ Camera unavailable.")
+                break
+            time.sleep(0.05)
+        
+        # Refresh if deactivated to show idle view
+        if not st.session_state.camera_preview:
+            st.rerun()
+
+    # 2. Capture Engine Loop (Moved here to ensure UI elements stay visible)
     if st.session_state.get("capture_running"):
         import os
         from src.preprocessing import preprocess_image
@@ -206,7 +251,6 @@ def show():
                 break
 
             frame = cv2.flip(frame, 1)
-            # Use the preprocessor for quality check
             processed = preprocess_image(frame)
             
             is_valid = processed is not None
@@ -224,8 +268,27 @@ def show():
                     count += 1
                     last_capture_time = current_time
 
-            # Update UI
-            display_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # Update UI (Draw overlay only on display frame)
+            display = frame.copy()
+            # Draw Scan Zone
+            cx, cy = display.shape[1]//2, display.shape[0]//2
+            w_h, h_h = 100, 125
+            color = (114, 132, 0) # BGR (success-green)
+            thickness = 2
+            length = 30
+            import numpy as np
+            corners = [
+                [(cx-w_h, cy-h_h+length), (cx-w_h, cy-h_h), (cx-w_h+length, cy-h_h)],
+                [(cx+w_h-length, cy-h_h), (cx+w_h, cy-h_h), (cx+w_h, cy-h_h+length)],
+                [(cx+w_h, cy+h_h-length), (cx+w_h, cy+h_h), (cx+w_h-length, cy+h_h)],
+                [(cx-w_h+length, cy+h_h), (cx-w_h, cy+h_h), (cx-w_h, cy+h_h-length)]
+            ]
+            for pt in corners:
+                cv2.polylines(display, [np.array(pt)], False, color, thickness, cv2.LINE_AA)
+            cv2.putText(display, "ENROLLING...", (cx-w_h+10, cy-h_h-10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA)
+
+            display_rgb = cv2.cvtColor(display, cv2.COLOR_BGR2RGB)
             frame_placeholder.image(display_rgb, channels="RGB", output_format="JPEG", width="stretch")
             progress_bar.progress(min(count / CAPTURE_COUNT, 1.0))
             status_placeholder.markdown(f"<p style='color:{color};font-weight:600;margin:0;'>{status_msg}</p>", unsafe_allow_html=True)
@@ -241,7 +304,3 @@ def show():
         st.session_state.capture_running = False
         st.rerun()
 
-    # ── Trigger rerun while preview is active to simulate streaming ────────
-    if st.session_state.camera_preview and not st.session_state.get("capture_running"):
-        time.sleep(0.04)  # ~25 fps
-        st.rerun()

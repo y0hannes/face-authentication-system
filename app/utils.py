@@ -190,7 +190,11 @@ def clear_all_data():
                 except Exception:
                     pass
     
-    # 3. Reset session state triggers
+    # 3. Reset in-memory model cache
+    from src.predict import reload_model
+    reload_model()
+
+    # 4. Reset session state triggers
     if "auth_result" in st.session_state:
         del st.session_state["auth_result"]
     if "capture_result" in st.session_state:
