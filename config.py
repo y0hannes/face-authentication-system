@@ -11,8 +11,8 @@ MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "face_model.pkl")
 IMAGE_SIZE = (64, 64)
 
 # Capture parameters
-CAPTURE_COUNT = 15
-CAPTURE_DELAY = 1.5   # seconds between captures
+CAPTURE_COUNT = 60
+CAPTURE_DELAY = 0.15   # seconds between captures for a high-intensity stream
 
 # Quality thresholds
 BLUR_THRESHOLD       = 50.0
@@ -30,6 +30,6 @@ HAAR_MIN_SIZE        = (100, 100)
 HAAR_EYE_MIN_NEIGHBORS = 10
 
 # Prediction parameters
-# With pixels normalized to [0, 1], maximum possible Euclidean distance is 64.
-# A threshold of 18.0 is a reasonable starting point for strict face matching.
-THRESHOLD = 18.0
+# With 60 samples per user and 64x64 pixels, a stricter threshold of 14.5
+# provides significantly better rejection of strangers while maintaining good accuracy.
+THRESHOLD = 14.5
