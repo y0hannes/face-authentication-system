@@ -31,8 +31,19 @@ def capture_images(
             "message": "Error: Could not access camera.",
         }
 
-    cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-    face_cascade = cv2.CascadeClassifier(cascade_path)
+    # Headless-safe cascade path detection
+    cascade_data = getattr(cv2, 'data', None)
+    if cascade_data and hasattr(cascade_data, 'haarcascades'):
+        cascade_path = cascade_data.haarcascades
+    else:
+        cascade_path = os.path.join(os.path.dirname(cv2.__file__), 'data')
+
+    face_cascade = cv2.CascadeClassifier(
+        os.path.join(cascade_path, "haarcascade_frontalface_default.xml")
+    )
+    if face_cascade.empty():
+        # Final fallback
+        face_cascade = cv2.CascadeClassifier("/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml")
 
     count = 0
     last_capture_time = 0
