@@ -3,7 +3,7 @@ import numpy as np
 
 from config import MODEL_PATH, THRESHOLD
 from src.preprocessing import preprocess_image
-from src.feature_engineering import get_label_encoder
+from src.feature_engineering import get_label_encoder, extract_features
 
 _model = None
 _label_encoder = None
@@ -61,7 +61,8 @@ def predict_face(image: np.ndarray) -> dict:
             "message": "No face detected in the frame.",
         }
 
-    flattened = processed.flatten().reshape(1, -1)
+    features = extract_features(processed)
+    flattened = features.reshape(1, -1)
 
     raw_prediction = model.predict(flattened)[0]
     distances, _ = model.kneighbors(flattened)

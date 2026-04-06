@@ -2,9 +2,19 @@ import os
 import pickle
 import numpy as np
 import cv2
+from skimage.feature import hog
 from sklearn.preprocessing import LabelEncoder
 
-from config import DATA_PATH, MODEL_PATH
+from config import (
+    DATA_PATH, 
+    MODEL_PATH,
+    HOG_ORIENTATIONS,
+    HOG_PIXELS_PER_CELL,
+    HOG_CELLS_PER_BLOCK,
+    HOG_BLOCK_NORM,
+    HOG_VISUALIZE,
+    HOG_MULTICHANNEL
+)
 from src.preprocessing import preprocess_image
 
 
@@ -12,7 +22,28 @@ from src.preprocessing import preprocess_image
 _ENCODER_PATH = MODEL_PATH.replace(".pkl", "_labels.pkl")
 
 
-#  Core dataset builder
+def extract_features(processed_image: np.ndarray) -> np.ndarray:
+    """
+    Extract HOG features from a preprocessed image.
+    
+    Args:
+        processed_image: Grayscale [0, 1] face image.
+        
+    Returns:
+        Flattened HOG feature vector.
+    """
+    from config import HOG_TRANSFORM_SQRT
+    features = hog(
+        processed_image,
+        orientations=HOG_ORIENTATIONS,
+        pixels_per_cell=HOG_PIXELS_PER_CELL,
+        cells_per_block=HOG_CELLS_PER_BLOCK,
+        block_norm=HOG_BLOCK_NORM,
+        visualize=HOG_VISUALIZE,
+        channel_axis=None if not HOG_MULTICHANNEL else -1,
+        transform_sqrt=HOG_TRANSFORM_SQRT
+    )
+    return features
 
 
 def create_dataset(
@@ -59,7 +90,8 @@ def create_dataset(
             print(f"[feature_engineering] No face detected in: {img_path}")
             continue
 
-        X.append(processed.flatten())
+        features = extract_features(processed)
+        X.append(features)
         y.append(username)
 
     if len(X) == 0:

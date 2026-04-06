@@ -20,7 +20,7 @@ def train_model(X, y) -> KNeighborsClassifier:
         X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
     )
 
-    knn = KNeighborsClassifier(n_neighbors=KNN_NEIGHBORS)
+    knn = KNeighborsClassifier(n_neighbors=KNN_NEIGHBORS, metric="cosine")
     knn.fit(X_train, y_train)
     print("[train] Model trained successfully.")
     return knn, X_test, y_test

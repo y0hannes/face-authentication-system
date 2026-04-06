@@ -47,7 +47,10 @@ class HaarPreprocessor:
         return clahe.apply(gray_image)
 
     def align_face(self, gray_image: np.ndarray, face_rect: tuple) -> np.ndarray:
-        """Rotate image so the inter-eye axis is horizontal."""
+        """
+        Align the face based on eye positions and crop to IMAGE_SIZE.
+        If eyes are not detected, returns the simple crop of the face_rect.
+        """
         (x, y, w, h) = face_rect
         roi_gray = gray_image[y : y + h, x : x + w]
 
@@ -58,35 +61,62 @@ class HaarPreprocessor:
         )
 
         if len(eyes) >= 2:
+            # Sort eyes by X coordinate
             eyes = sorted(eyes, key=lambda e: e[0])[:2]
             (ex1, ey1, ew1, eh1) = eyes[0]
             (ex2, ey2, ew2, eh2) = eyes[1]
 
-            eye1_center = (x + ex1 + ew1 // 2, y + ey1 + eh1 // 2)
-            eye2_center = (x + ex2 + ew2 // 2, y + ey2 + eh2 // 2)
+            # Relative centers in ROI
+            eye1_center = (ex1 + ew1 // 2, ey1 + eh1 // 2)
+            eye2_center = (ex2 + ew2 // 2, ey2 + eh2 // 2)
 
-            dY = eye2_center[1] - eye1_center[1]
-            dX = eye2_center[0] - eye1_center[0]
+            # Absolute centers in gray_image
+            p1 = (x + eye1_center[0], y + eye1_center[1])
+            p2 = (x + eye2_center[0], y + eye2_center[1])
 
-            if dX == 0 and dY == 0:
-                return gray_image
-
+            # Calculate angle and distance
+            dY = p2[1] - p1[1]
+            dX = p2[0] - p1[0]
             angle = np.degrees(np.arctan2(dY, dX))
-            midpoint = (
-                (eye1_center[0] + eye2_center[0]) / 2,
-                (eye1_center[1] + eye2_center[1]) / 2,
-            )
+            
+            # Distance between eyes
+            dist = np.sqrt(dX**2 + dY**2)
+            if dist < 1:
+                # Eyes are literally on top of each other, can't reliably align
+                crop = gray_image[y : y + h, x : x + w]
+                return cv2.resize(crop, IMAGE_SIZE, interpolation=cv2.INTER_AREA)
 
-            M = cv2.getRotationMatrix2D(midpoint, angle, 1.0)
-            aligned = cv2.warpAffine(
+            desired_dist = IMAGE_SIZE[0] * 0.4  # 40% of width
+            scale = desired_dist / dist
+
+            # Center of rotation is the midpoint between eyes
+            center = (float((p1[0] + p2[0]) / 2), float((p1[1] + p2[1]) / 2))
+
+            # Angle must be float
+            angle = float(angle)
+            scale = float(scale)
+
+            M = cv2.getRotationMatrix2D(center, angle, scale)
+
+            # Adjust translation to move eyes to the desired location
+            # Desired eye midpoint should be at (width/2, height*0.35)
+            tX = float(IMAGE_SIZE[0] * 0.5)
+            tY = float(IMAGE_SIZE[1] * 0.35)
+            M[0, 2] += (tX - center[0])
+            M[1, 2] += (tY - center[1])
+
+            # Warp the image to the target size
+            face_aligned = cv2.warpAffine(
                 gray_image,
                 M,
-                (gray_image.shape[1], gray_image.shape[0]),
-                flags=cv2.INTER_CUBIC,
+                IMAGE_SIZE,
+                flags=cv2.INTER_CUBIC
             )
-            return aligned
+            return face_aligned
 
-        return gray_image
+        # Fallback: simple crop and resize if eyes not found
+        crop = gray_image[y : y + h, x : x + w]
+        return cv2.resize(crop, IMAGE_SIZE, interpolation=cv2.INTER_AREA)
 
     def process_image(self, image: np.ndarray):
         if image is None:
@@ -111,22 +141,12 @@ class HaarPreprocessor:
 
         # 4. Largest face wins
         face_rect = max(faces, key=lambda f: f[2] * f[3])
-        (x, y, w, h) = face_rect
 
-        # 5. Alignment
-        aligned = self.align_face(gray, face_rect)
+        # 5. Alignment and Crop (Combined now)
+        face_processed = self.align_face(gray, face_rect)
 
-        # 6. Crop
-        crop = aligned[y : y + h, x : x + w]
-
-        # 7. Resize
-        try:
-            face_resized = cv2.resize(crop, IMAGE_SIZE, interpolation=cv2.INTER_AREA)
-        except Exception:
-            return None
-
-        # 8. Pixel normalisation [0, 1]
-        return face_resized.astype("float32") / 255.0
+        # 6. Pixel normalisation [0, 1]
+        return face_processed.astype("float32") / 255.0
 
 
 _preprocessor: HaarPreprocessor = None
